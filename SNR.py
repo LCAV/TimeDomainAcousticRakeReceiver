@@ -23,7 +23,7 @@ max_order_sim = 10
 sigma2_n = 1e-7
 
 # Room 1 : Shoe box
-room_dim = [4, 6]
+room_dim = np.array([4, 6])
 
 # the good source is fixed for all 
 good_source = [1, 4.5]       # good source
@@ -38,7 +38,7 @@ d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
 shape = 'Linear'        # array shape
-Lg_t = 0.05             # Filter size in seconds
+Lg_t = 0.03             # Filter size in seconds
 Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
 
 # define the FFT length
@@ -86,39 +86,28 @@ room1.addSource(normal_interferer, signal=signal2, delay=delay2)
 room1.compute_RIR()
 room1.simulate()
 
-# compute beamforming filters
-good_sources = room1.sources[0].getImages(max_order=max_order_design)
-bad_sources = room1.sources[1].getImages(max_order=max_order_design)
-mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M))
-mics.weightsFromFilters()
+max_source = 15
+loops = 10
+SNR = np.zeros((max_source, loops))
 
-# process the signal
-output = mics.process()
+for i in np.arange(max_source):
+    for n in np.arange(loops):
 
-# save to output file
-inp = pra.normalize(pra.highpass(mics.signals[mics.M/2], Fs))
-out = pra.normalize(pra.highpass(output, Fs))
+        source = np.random.random(2)*room_dim
+        interferer = np.random.random(2)*room_dim
+        mics = tdb.RakeMaxSINR_TD(R, Fs, N, Lg=Lg)
 
-wavfile.write('output_samples/input.wav', Fs, inp)
-wavfile.write('output_samples/output.wav', Fs, out)
+        room1.addSource(source)
+        room1.addSource(interferer)
+        room1.addMicrophoneArray(mics)
 
-'''
-Plot Stuff
-'''
-# plot the room and beamformer
-room1.plot(img_order=np.minimum(room1.max_order, 1), 
-        freq=freq)
+        room1.compute_RIR()
 
-# plot the beamforming weights
+        # compute beamforming filters
+        good_sources = room1.sources[0].getImages(n_nearest=i+1, ref_point=source[:,np.newaxis])
+        bad_sources = room1.sources[1].getImages(n_nearest=i+1, ref_point=source[:,np.newaxis])
+        SNR[i,n] = mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M))
+
 plt.figure()
-mics.plot()
+plt.plot(np.arange(max_source)+1, SNR.median())
 
-# plot before/after processing
-plt.figure()
-pra.comparePlot(inp, out, Fs)
-
-# plot angle/frequency plot
-plt.figure()
-mics.plot_beam_response()
-
-plt.show()

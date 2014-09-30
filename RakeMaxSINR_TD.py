@@ -29,11 +29,11 @@ room_dim = [4, 6]
 good_source = [1, 4.5]       # good source
 normal_interferer = [2.8, 4.3]   # interferer
 hard_interferer = [1.5, 3]   # interferer in direct path
-#normal_interferer = hard_interferer
+normal_interferer = hard_interferer
 
 # microphone array design parameters
 mic1 = [2, 1.5]         # position
-M = 8                    # number of microphones
+M = 8                   # number of microphones
 d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
@@ -47,9 +47,12 @@ N = 1024
 # create a microphone array
 if shape is 'Circular':
     R = pra.circular2DArray(mic1, M, phi, d*M/(2*np.pi)) 
+elif shape is 'Poisson':
+    R = pra.poisson2DArray(mic1, M, d)
 else:
     R = pra.linear2DArray(mic1, M, phi, d) 
-mics = tdb.RakeMVDR_TD(R, Fs, N, Lg=Lg)
+mics = tdb.RakeMaxSINR_TD(R, Fs, N, Lg=Lg)
+
 
 # The first signal (of interest) is singing
 rate1, signal1 = wavfile.read('samples/singing_'+str(Fs)+'.wav')
@@ -105,17 +108,22 @@ wavfile.write('output_samples/output.wav', Fs, out)
 '''
 Plot Stuff
 '''
+f_size = (3.93, 1.57)
+
 # plot the room and beamformer
 room1.plot(img_order=np.minimum(room1.max_order, 1), 
-        freq=freq)
+        freq=freq, figsize=f_size)
+plt.savefig('MaxSINR_Room.pdf')
 
 # plot the beamforming weights
-plt.figure()
-mics.plot()
+plt.figure(figsize=f_size)
+mics.plot(FD=False)
+plt.savefig('MaxSINR_filters.pdf')
 
 # plot before/after processing
-plt.figure()
+plt.figure(figsize=f_size)
 pra.comparePlot(inp, out, Fs)
+plt.savefig('MaxSINR_comparison.pdf')
 
 # plot angle/frequency plot
 plt.figure()

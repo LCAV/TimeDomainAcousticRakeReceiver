@@ -49,7 +49,7 @@ if shape is 'Circular':
     R = pra.circular2DArray(mic1, M, phi, d*M/(2*np.pi)) 
 else:
     R = pra.linear2DArray(mic1, M, phi, d) 
-mics = tdb.RakeMVDR_TD(R, Fs, N, Lg=Lg)
+mics = tdb.RakeOF_TD(R, Fs, N, Lg=Lg)
 
 # The first signal (of interest) is singing
 rate1, signal1 = wavfile.read('samples/singing_'+str(Fs)+'.wav')
