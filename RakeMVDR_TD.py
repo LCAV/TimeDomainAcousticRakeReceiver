@@ -38,8 +38,9 @@ d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
 shape = 'Linear'        # array shape
-Lg_t = 0.05             # Filter size in seconds
+Lg_t = 0.03             # Filter size in seconds
 Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
+delay = 0.02
 
 # define the FFT length
 N = 1024
@@ -89,7 +90,7 @@ room1.simulate()
 # compute beamforming filters
 good_sources = room1.sources[0].getImages(max_order=max_order_design)
 bad_sources = room1.sources[1].getImages(max_order=max_order_design)
-mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M))
+mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 mics.weightsFromFilters()
 
 # process the signal
@@ -111,7 +112,7 @@ room1.plot(img_order=np.minimum(room1.max_order, 1),
 
 # plot the beamforming weights
 plt.figure()
-mics.plot()
+mics.plot(FD=False)
 
 # plot before/after processing
 plt.figure()

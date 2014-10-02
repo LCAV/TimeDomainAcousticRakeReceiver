@@ -99,7 +99,7 @@ We create a new Beamformer class for Rake MaxSINR in time-domain
 '''
 class RakeMaxSINR_TD(pra.Beamformer):
 
-    def computeWeights(self, sources, interferers, R_n, epsilon=1e-2):
+    def computeWeights(self, sources, interferers, R_n, delay=None, epsilon=1e-2):
 
         dist_mat = pra.distance(self.R, sources)
         s_time = dist_mat / pra.c
@@ -292,7 +292,7 @@ class RakeMVDR_TD(pra.Beamformer):
         '''
         import matplotlib.pyplot as plt
         plt.figure()
-        plt.plot(np.arange(L)/float(self.Fs), np.dot(H[:,:L].T, g_temp))
+        plt.plot(np.arange(L)/float(self.Fs), np.dot(H[:,:L].T, g_val))
         '''
 
         # compute and return SNR

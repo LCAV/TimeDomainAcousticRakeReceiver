@@ -9,6 +9,13 @@ from scipy.signal import resample,fftconvolve
 import pyroomacoustics as pra
 import TDBeamformers as tdb
 
+# simulation parameters
+bf_names = ('Rake-MaxSINR', 'Rake-MVDR', 'Rake-Perceptual')
+bf_designs = (tdb.RakeMaxSINR_TD, tdb.RakeMVDR_TD, tdb.RakePerceptual_TD)
+max_source = 15
+loops = 1000
+SNR = np.zeros((max_source, len(bf_designs), loops))
+
 # Beam pattern figure properties
 freq=[800, 1600]
 figsize=(1.88,2.24)
@@ -38,8 +45,9 @@ d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
 shape = 'Linear'        # array shape
-Lg_t = 0.05             # Filter size in seconds
+Lg_t = 0.03             # Filter size in seconds
 Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
+delay = 0.02            # delay of beamformer
 
 # define the FFT length
 N = 1024
@@ -61,13 +69,6 @@ room1 = pra.Room.shoeBox2D(
     absorption=absorption,
     sigma2_awgn=sigma2_n)
 
-# simulation parameters
-bf_names = ('Rake-MaxSINR', 'Rake-MVDR', 'Rake-Perceptual')
-bf_designs = (tdb.RakeMaxSINR_TD, tdb.RakeMVDR_TD, tdb.RakePerceptual_TD)
-max_source = 5
-loops = 10
-SNR = np.zeros((max_source, len(bf_designs), loops))
-
 for i in np.arange(max_source):
     for n in np.arange(loops):
 
@@ -85,7 +86,7 @@ for i in np.arange(max_source):
         # compute SNR for all three beamformers
         for t in np.arange(len(bf_designs)):
             mics = bf_designs[t](R, Fs, N, Lg=Lg)
-            SNR[i,t,n] = mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M))
+            SNR[i,t,n] = mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
         # remove the source and interferer from the room
         room1.sources.pop()
@@ -93,10 +94,13 @@ for i in np.arange(max_source):
 
     print 'Finished %d sources.' % (i)
 
+'''
 plt.figure()
 plt.plot(np.arange(max_source)+1, pra.dB(np.median(SNR, axis=-1)))
 plt.xlabel('Number of sources $K$')
 plt.ylabel('Output SINR')
 plt.legend(bf_names)
 plt.show()
+'''
 
+np.save('SNR_data.npy', SNR)
