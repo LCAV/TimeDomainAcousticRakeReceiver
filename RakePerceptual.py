@@ -29,7 +29,7 @@ room_dim = [4, 6]
 good_source = [1, 4.5]       # good source
 normal_interferer = [2.8, 4.3]   # interferer
 hard_interferer = [1.5, 3]   # interferer in direct path
-normal_interferer = hard_interferer
+#normal_interferer = hard_interferer
 
 # microphone array design parameters
 mic1 = [2, 1.5]         # position
@@ -112,18 +112,15 @@ f_size = (3.93, 1.57)
 
 # plot the room and beamformer
 room1.plot(img_order=np.minimum(room1.max_order, 1), 
-        freq=freq, figsize=f_size)
-plt.savefig('Perceptual_Room.pdf')
+        freq=freq)
 
 # plot the beamforming weights
-plt.figure(figsize=f_size)
+plt.figure()
 mics.plot(FD=False)
-plt.savefig('Perceptual_filters.pdf')
 
 # plot before/after processing
-plt.figure(figsize=f_size)
+plt.figure()
 pra.comparePlot(inp, out, Fs)
-plt.savefig('Perceptual_comparison.pdf')
 
 # plot angle/frequency plot
 plt.figure()

@@ -1,7 +1,8 @@
 
 import numpy as np
 from scipy.signal import resample,fftconvolve
-from scipy.linalg import toeplitz
+from scipy.linalg import toeplitz, inv
+import scipy.linalg as la
 
 import pyroomacoustics as pra
 
@@ -11,7 +12,7 @@ We create a new Beamformer class for Rake Perceptually motivated beamformers
 '''
 class RakePerceptual_TD(pra.Beamformer):
 
-    def computeWeights(self, sources, interferers, R_n, epsilon=1e-2):
+    def computeWeights(self, sources, interferers, R_n, delay=0.03, epsilon=1e-2):
 
         dist_mat = pra.distance(self.R, sources)
         s_time = dist_mat / pra.c
@@ -26,8 +27,6 @@ class RakePerceptual_TD(pra.Beamformer):
         t_min = np.minimum(s_time.min(), i_time.min())
         t_max = np.maximum(s_time.max(), i_time.max())
         
-        kappa = int(t_max*float(self.Fs))
-        kappa = int(0.03*self.Fs)
 
         # adjust timing
         s_time -= t_min - offset
@@ -46,59 +45,35 @@ class RakePerceptual_TD(pra.Beamformer):
 
             # build interferer RIR matrix
             hx = pra.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            #row = np.pad(hx, ((0,L-len(hx))), mode='constant')
-            #col = np.pad(hx[:1], ((0, Lg-1)), mode='constant')
-            #H[r*Lg:(r+1)*Lg,:L] = toeplitz(col, row)
             H[r*Lg:(r+1)*Lg,:L] = pra.convmtx(hx, Lg).T
 
             # build interferer RIR matrix
             hq = pra.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            #row = np.pad(hq, ((0,L-len(hq))), mode='constant')
-            #col = np.pad(hq[:1], ((0, Lg-1)), mode='constant')
-            #H[r*Lg:(r+1)*Lg,L:] = toeplitz(col, row)
             H[r*Lg:(r+1)*Lg,L:] = pra.convmtx(hq, Lg).T
+            
+        # Delay of the system in samples
+        kappa = int(delay*self.Fs)
 
-        # the constraint vector
-        c = np.zeros(L)
-        n0 = kappa
-        n1 = np.minimum(n0 + np.ceil(0.03*self.Fs), L)
-        n2 = np.minimum(n0 + np.ceil(0.05*self.Fs), L)
-        exponent = -1./(0.02*self.Fs)*np.log(1e-2)
-        c[n0:n1] = np.ones(n1-n0)
-        if (n2 > n1):
-            c[n1:n2] = np.exp(-exponent*np.arange(n2-n1))
-        c = c[:,np.newaxis]
-
-        A = H[:,:n0+1]
-        b = np.zeros((n0+1,1))
+        # the constraint
+        A = H[:,:kappa+1]
+        b = np.zeros((kappa+1,1))
         b[-1,0] = 1
-
-        h = H[:,n0,np.newaxis]
 
         # We first assume the sample are uncorrelated
         K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
 
         # causal response construction
-        B = np.dot(np.linalg.inv(K_nq), A)
-        C = np.linalg.inv(np.dot(A.T, B))
+        '''
+        B = np.dot(la.inv(K_nq), A)
+        C = la.inv(np.dot(A.T, B))
         g_val = np.dot(B, np.dot(C, b))
-
         '''
-        from cvxopt import matrix, solvers
-
-        # rename everything in QP terminology
-        Q = 2.*matrix(K_nq)
-        p = matrix(np.zeros(self.M*Lg))
-        G = matrix(np.concatenate((H[:,:n0], H[:,n0+1:L]), axis=1).T)
-        c1 = np.concatenate((c[:n0,:], c[n0+1:,:]), axis=0)
-        h = matrix(c1[:,0])
-        A = matrix(H[:,n0], (1,self.M*Lg))
-        b = matrix(1.0)
-        
-        # solve the QP
-        sol = solvers.qp(Q, p, G, h, A, b)
-        g_val = np.array(sol['x'])
-        '''
+        C = la.cho_factor(K_nq, overwrite_a=True, check_finite=False)
+        B = la.cho_solve(C, A)
+        D = np.dot(A.T, B)
+        C = la.cho_factor(D, overwrite_a=True, check_finite=False)
+        x = la.cho_solve(C, b)
+        g_val = np.dot(B, x)
 
         # reshape and store
         self.filters = g_val.reshape((self.M, self.Lg))
@@ -111,6 +86,7 @@ class RakePerceptual_TD(pra.Beamformer):
         plt.legend(('Channel of desired source','Channel of interferer'))
         '''
 
+        # compute and return SNR
         A = np.dot(g_val.T, H[:,:L])
         num = np.dot(A, A.T)
         denom =  np.dot(np.dot(g_val.T, K_nq), g_val)
@@ -161,41 +137,18 @@ class RakeMaxSINR_TD(pra.Beamformer):
             hq = pra.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
             H[r*Lg:(r+1)*Lg,L:] = pra.convmtx(hq, Lg).T
 
-        # the constraint vector
-        c = np.zeros(L)
-        kappa = int(0.03*self.Fs)
-        c[kappa] = 1.
-
         # We first assume the sample are uncorrelated
         K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
 
-        '''
-        # Compute the TD filters
-        K_nq_inv = np.linalg.inv(K_nq)
-        C = np.dot(K_nq_inv, H[:,:L])
-        B = np.linalg.inv(np.dot(H[:,:L].T, C))
-        g_val = np.dot(C, np.dot(B, c))
-        self.filters = g_val.reshape((self.M,Lg))
-        '''
-
-        #'''
-        # faster (?)
-        A = pra.levinson(K_nq[:,0], H[:,:L])
-        B = H[:,:L].T.dot(A)
-        x = np.linalg.solve(B, c)
-        g_val = np.dot(A, x)
-        self.filters = g_val.reshape((self.M,Lg))
-        #'''
-
-        '''
         # Compute TD filters using generalized Rayleigh coefficient maximization
-        C_inv = np.linalg.inv(np.linalg.cholesky(K_nq))
-        B = np.dot(H[:,:L].T, C_inv)
-        l, v = np.linalg.eig( np.dot(B.T,B) ) 
-        print v[:,0].sum()
-        g_val = np.dot(C_inv.T, np.real(v[:,0]))
+        C = la.cholesky(K_nq, lower=False, overwrite_a=True, check_finite=False)
+        B = la.solve_triangular(C, H[:,:L], trans=1, lower=False, check_finite=False)
+        B = B.dot(B.T)
+        SINR, v = la.eigh(B, eigvals=(self.M*Lg-1, self.M*Lg-1), overwrite_a=True, check_finite=False)
+        g_val = la.solve_triangular(C, np.real(v[:,0]), lower=False, check_finite=False)
+        g_val /= np.max(np.abs(g_val))
+
         self.filters = g_val.reshape((self.M, Lg))
-        '''
 
         '''
         import matplotlib.pyplot as plt
@@ -205,10 +158,8 @@ class RakeMaxSINR_TD(pra.Beamformer):
         plt.legend(('Channel of desired source','Channel of interferer'))
         '''
 
-        A = np.dot(g_val.T, H[:,:L])
-        num = np.dot(A, A.T)
-        denom =  np.dot(np.dot(g_val.T, K_nq), g_val)
-        return num/denom
+        # compute and return SNR
+        return SINR[0]
 
 
 '''
@@ -253,30 +204,29 @@ class RakeOF_TD(pra.Beamformer):
 
             # build interferer RIR matrix
             hx = pra.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            #row = np.pad(hx, ((0,L-len(hx))), mode='constant')
-            #col = np.pad(hx[:1], ((0, Lg-1)), mode='constant')
-            #H[r*Lg:(r+1)*Lg,:L] = toeplitz(col, row)
             H[r*Lg:(r+1)*Lg,:L] = pra.convmtx(hx, Lg).T
 
             # build interferer RIR matrix
             hq = pra.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            #row = np.pad(hq, ((0,L-len(hq))), mode='constant')
-            #col = np.pad(hq[:1], ((0, Lg-1)), mode='constant')
-            #H[r*Lg:(r+1)*Lg,L:] = toeplitz(col, row)
             H[r*Lg:(r+1)*Lg,L:] = pra.convmtx(hq, Lg).T
 
         ones = np.ones((K,1))
 
         # We first assume the sample are uncorrelated
-        #K_nq = np.dot(H, H.T) + R_n
         K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
 
         # Compute the TD filters
         K_nq_inv = np.linalg.inv(K_nq)
         C = np.dot(K_nq_inv, As)
         B = np.linalg.inv(np.dot(As.T, C))
-        g_temp = np.dot(C, np.dot(B, ones))
-        self.filters = g_temp.reshape((self.M,Lg))
+        g_val = np.dot(C, np.dot(B, ones))
+        self.filters = g_val.reshape((self.M,Lg))
+
+        # compute and return SNR
+        A = np.dot(g_val.T, H[:,:L])
+        num = np.dot(A, A.T)
+        denom =  np.dot(np.dot(g_val.T, K_nq), g_val)
+        return num/denom
 
 
 '''
@@ -284,7 +234,7 @@ We create a new Beamformer class for Rake MVDR in time-domain
 '''
 class RakeMVDR_TD(pra.Beamformer):
 
-    def computeWeights(self, sources, interferers, R_n, epsilon=1e-2):
+    def computeWeights(self, sources, interferers, R_n, delay=0.03, epsilon=1e-2):
 
         dist_mat = pra.distance(self.R, sources)
         s_time = dist_mat / pra.c
@@ -325,20 +275,28 @@ class RakeMVDR_TD(pra.Beamformer):
             H[r*Lg:(r+1)*Lg,L:2*L] = toeplitz(col, row)
 
         # the constraint vector
-        kappa = int(t_max*self.Fs)
+        kappa = int(delay*self.Fs)
         h = H[:,kappa]
 
         # We first assume the sample are uncorrelated
-        Ryy = np.dot(H, H.T) + R_n
+        R_xx = np.dot(H[:,:L], H[:,:L].T)
+        K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
 
         # Compute the TD filters
-        Ryy_inv = np.linalg.inv(Ryy)
-        g_temp = np.dot(Ryy_inv, h)
-        g = g_temp/np.inner(h, g_temp)
-        self.filters = g.reshape((self.M,Lg))
+        C = la.cho_factor(R_xx + K_nq, overwrite_a=True, check_finite=False)
+        g_val = la.cho_solve(C, h)
 
+        g_val /= np.inner(h, g_val)
+        self.filters = g_val.reshape((self.M,Lg))
+
+        '''
         import matplotlib.pyplot as plt
         plt.figure()
-        plt.plot(np.arange(L)/float(self.Fs), np.dot(H[:,:L].T, g))
+        plt.plot(np.arange(L)/float(self.Fs), np.dot(H[:,:L].T, g_temp))
+        '''
 
+        # compute and return SNR
+        num = np.inner(g_val.T, np.dot(R_xx, g_val))
+        denom =  np.inner(np.dot(g_val.T, K_nq), g_val)
+        return num/denom
 

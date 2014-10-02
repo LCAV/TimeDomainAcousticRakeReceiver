@@ -29,7 +29,7 @@ room_dim = [4, 6]
 good_source = [1, 4.5]       # good source
 normal_interferer = [2.8, 4.3]   # interferer
 hard_interferer = [1.5, 3]   # interferer in direct path
-normal_interferer = hard_interferer
+#normal_interferer = hard_interferer
 
 # microphone array design parameters
 mic1 = [2, 1.5]         # position
@@ -38,7 +38,7 @@ d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
 shape = 'Linear'        # array shape
-Lg_t = 0.05             # Filter size in seconds
+Lg_t = 0.03             # Filter size in seconds
 Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
 
 # define the FFT length
@@ -112,18 +112,15 @@ f_size = (3.93, 1.57)
 
 # plot the room and beamformer
 room1.plot(img_order=np.minimum(room1.max_order, 1), 
-        freq=freq, figsize=f_size)
-plt.savefig('MaxSINR_Room.pdf')
+        freq=freq)
 
 # plot the beamforming weights
-plt.figure(figsize=f_size)
-mics.plot(FD=False)
-plt.savefig('MaxSINR_filters.pdf')
+plt.figure()
+mics.plot(FD=True)
 
 # plot before/after processing
-plt.figure(figsize=f_size)
+plt.figure()
 pra.comparePlot(inp, out, Fs)
-plt.savefig('MaxSINR_comparison.pdf')
 
 # plot angle/frequency plot
 plt.figure()

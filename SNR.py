@@ -19,7 +19,7 @@ ylim=[-4.9,9.4]
 Fs = 8000
 t0 = 1./(Fs*np.pi*1e-2)  # starting time function of sinc decay in RIR response
 absorption = 0.90
-max_order_sim = 10
+max_order_sim = 3
 sigma2_n = 1e-7
 
 # Room 1 : Shoe box
@@ -38,7 +38,7 @@ d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
 shape = 'Linear'        # array shape
-Lg_t = 0.03             # Filter size in seconds
+Lg_t = 0.05             # Filter size in seconds
 Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
 
 # define the FFT length
@@ -49,21 +49,7 @@ if shape is 'Circular':
     R = pra.circular2DArray(mic1, M, phi, d*M/(2*np.pi)) 
 else:
     R = pra.linear2DArray(mic1, M, phi, d) 
-mics = tdb.RakeMVDR_TD(R, Fs, N, Lg=Lg)
-
-# The first signal (of interest) is singing
-rate1, signal1 = wavfile.read('samples/singing_'+str(Fs)+'.wav')
-signal1 = np.array(signal1, dtype=float)
-signal1 = pra.normalize(signal1)
-signal1 = pra.highpass(signal1, Fs)
-delay1 = 0.
-
-# the second signal (interferer) is some german speech
-rate2, signal2 = wavfile.read('samples/german_speech_'+str(Fs)+'.wav')
-signal2 = np.array(signal2, dtype=float)
-signal2 = pra.normalize(signal2)
-signal2 = pra.highpass(signal2, Fs)
-delay2 = 1.
+center = R.mean(axis=1, keepdims=True)
 
 # create the room with sources and mics
 room1 = pra.Room.shoeBox2D(
@@ -75,39 +61,42 @@ room1 = pra.Room.shoeBox2D(
     absorption=absorption,
     sigma2_awgn=sigma2_n)
 
-# add mic and good source to room
-room1.addSource(good_source, signal=signal1, delay=delay1)
-room1.addMicrophoneArray(mics)
-
-# add interferer
-room1.addSource(normal_interferer, signal=signal2, delay=delay2)
-
-# simulate the acoustic
-room1.compute_RIR()
-room1.simulate()
-
-max_source = 15
+# simulation parameters
+bf_names = ('Rake-MaxSINR', 'Rake-MVDR', 'Rake-Perceptual')
+bf_designs = (tdb.RakeMaxSINR_TD, tdb.RakeMVDR_TD, tdb.RakePerceptual_TD)
+max_source = 5
 loops = 10
-SNR = np.zeros((max_source, loops))
+SNR = np.zeros((max_source, len(bf_designs), loops))
 
 for i in np.arange(max_source):
     for n in np.arange(loops):
 
+        # Add new source and interferer to the room
         source = np.random.random(2)*room_dim
-        interferer = np.random.random(2)*room_dim
-        mics = tdb.RakeMaxSINR_TD(R, Fs, N, Lg=Lg)
-
         room1.addSource(source)
+
+        interferer = np.random.random(2)*room_dim
         room1.addSource(interferer)
-        room1.addMicrophoneArray(mics)
 
-        room1.compute_RIR()
+        # Select their nearest image sources (from the array center)
+        good_sources = room1.sources[0].getImages(n_nearest=i+1, ref_point=center)
+        bad_sources = room1.sources[1].getImages(n_nearest=i+1, ref_point=center)
 
-        # compute beamforming filters
-        good_sources = room1.sources[0].getImages(n_nearest=i+1, ref_point=source[:,np.newaxis])
-        bad_sources = room1.sources[1].getImages(n_nearest=i+1, ref_point=source[:,np.newaxis])
-        SNR[i,n] = mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M))
+        # compute SNR for all three beamformers
+        for t in np.arange(len(bf_designs)):
+            mics = bf_designs[t](R, Fs, N, Lg=Lg)
+            SNR[i,t,n] = mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M))
+
+        # remove the source and interferer from the room
+        room1.sources.pop()
+        room1.sources.pop()
+
+    print 'Finished %d sources.' % (i)
 
 plt.figure()
-plt.plot(np.arange(max_source)+1, SNR.median())
+plt.plot(np.arange(max_source)+1, pra.dB(np.median(SNR, axis=-1)))
+plt.xlabel('Number of sources $K$')
+plt.ylabel('Output SINR')
+plt.legend(bf_names)
+plt.show()
 
