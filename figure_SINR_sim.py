@@ -10,9 +10,9 @@ import pyroomacoustics as pra
 import TDBeamformers as tdb
 
 # simulation parameters
-bf_names = ('Rake-MaxSINR', 'Rake-MVDR', 'Rake-Perceptual')
-bf_designs = (tdb.RakeMaxSINR_TD, tdb.RakeMVDR_TD, tdb.RakePerceptual_TD)
-max_source = 15
+bf_names = ('Rake-MaxSINR', 'Rake-Perceptual', 'Rake-MVDR')
+bf_designs = (tdb.RakeMaxSINR_TD, tdb.RakePerceptual_TD, tdb.RakeMVDR_TD)
+max_source = 10
 loops = 1000
 SINR = np.zeros((max_source, len(bf_designs), loops))
 
@@ -46,9 +46,9 @@ d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
 shape = 'Linear'        # array shape
-Lg_t = 0.10             # Filter size in seconds
+Lg_t = 0.03             # Filter size in seconds
 Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
-delay = 0.05            # delay of beamformer
+delay = 0.02            # delay of beamformer
 
 # define the FFT length
 N = 1024
@@ -81,8 +81,8 @@ for i in np.arange(max_source):
         room1.addSource(interferer)
 
         # compute noise power for 20dB SNR
-        dc = ((source[:,np.newaxis] - center)**2).sum()
-        sigma2_n = 10.**(-SNR/10.)/(4.*np.pi*dc)
+        dc = np.sqrt(((source[:,np.newaxis] - center)**2).sum())
+        sigma2_n = 10.**(-SNRdB/10.)/(4.*np.pi*dc)
 
         # Select their nearest image sources (from the array center)
         good_sources = room1.sources[0].getImages(n_nearest=i+1, ref_point=center)
@@ -99,13 +99,13 @@ for i in np.arange(max_source):
 
     print 'Finished %d sources.' % (i)
 
-#'''
+'''
 plt.figure()
 plt.plot(np.arange(max_source)+1, pra.dB(np.median(SINR, axis=-1)))
 plt.xlabel('Number of sources $K$')
 plt.ylabel('Output SINR')
 plt.legend(bf_names)
 plt.show()
-#'''
+'''
 
-#np.save('SINR_data.npy', SINR)
+np.save('SINR_data.npy', SINR)
