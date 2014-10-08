@@ -20,7 +20,7 @@ Fs = 8000
 t0 = 1./(Fs*np.pi*1e-2)  # starting time function of sinc decay in RIR response
 absorption = 0.90
 max_order_sim = 10
-sigma2_n = 1e-7
+sigma2_n = 1e-15
 
 # Room 1 : Shoe box
 room_dim = [4, 6]
@@ -33,14 +33,14 @@ hard_interferer = [1.5, 3]   # interferer in direct path
 
 # microphone array design parameters
 mic1 = [2, 1.5]         # position
-M = 8                    # number of microphones
+M = 8                   # number of microphones
 d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
 shape = 'Linear'        # array shape
-Lg_t = 0.03             # Filter size in seconds
+Lg_t = 0.100            # Filter size in seconds
 Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
-delay = 0.02
+delay = 0.050
 
 # define the FFT length
 N = 1024
@@ -112,7 +112,7 @@ room1.plot(img_order=np.minimum(room1.max_order, 1),
 
 # plot the beamforming weights
 plt.figure()
-mics.plot(FD=False)
+mics.plot(FD=True)
 
 # plot before/after processing
 plt.figure()

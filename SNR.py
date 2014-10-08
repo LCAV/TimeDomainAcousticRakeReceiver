@@ -14,7 +14,7 @@ bf_names = ('Rake-MaxSINR', 'Rake-MVDR', 'Rake-Perceptual')
 bf_designs = (tdb.RakeMaxSINR_TD, tdb.RakeMVDR_TD, tdb.RakePerceptual_TD)
 max_source = 15
 loops = 1000
-SNR = np.zeros((max_source, len(bf_designs), loops))
+SINR = np.zeros((max_source, len(bf_designs), loops))
 
 # Beam pattern figure properties
 freq=[800, 1600]
@@ -27,7 +27,8 @@ Fs = 8000
 t0 = 1./(Fs*np.pi*1e-2)  # starting time function of sinc decay in RIR response
 absorption = 0.90
 max_order_sim = 3
-sigma2_n = 1e-7
+sigma2_n = 1e-15
+SNRdB = 20.
 
 # Room 1 : Shoe box
 room_dim = np.array([4, 6])
@@ -45,9 +46,9 @@ d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
 shape = 'Linear'        # array shape
-Lg_t = 0.03             # Filter size in seconds
+Lg_t = 0.10             # Filter size in seconds
 Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
-delay = 0.02            # delay of beamformer
+delay = 0.05            # delay of beamformer
 
 # define the FFT length
 N = 1024
@@ -79,14 +80,18 @@ for i in np.arange(max_source):
         interferer = np.random.random(2)*room_dim
         room1.addSource(interferer)
 
+        # compute noise power for 20dB SNR
+        dc = ((source[:,np.newaxis] - center)**2).sum()
+        sigma2_n = 10.**(-SNR/10.)/(4.*np.pi*dc)
+
         # Select their nearest image sources (from the array center)
         good_sources = room1.sources[0].getImages(n_nearest=i+1, ref_point=center)
-        bad_sources = room1.sources[1].getImages(n_nearest=i+1, ref_point=center)
+        bad_sources = room1.sources[1].getImages(n_nearest=1, ref_point=center)
 
         # compute SNR for all three beamformers
         for t in np.arange(len(bf_designs)):
             mics = bf_designs[t](R, Fs, N, Lg=Lg)
-            SNR[i,t,n] = mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
+            SINR[i,t,n] = mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
         # remove the source and interferer from the room
         room1.sources.pop()
@@ -94,13 +99,13 @@ for i in np.arange(max_source):
 
     print 'Finished %d sources.' % (i)
 
-'''
+#'''
 plt.figure()
-plt.plot(np.arange(max_source)+1, pra.dB(np.median(SNR, axis=-1)))
+plt.plot(np.arange(max_source)+1, pra.dB(np.median(SINR, axis=-1)))
 plt.xlabel('Number of sources $K$')
 plt.ylabel('Output SINR')
 plt.legend(bf_names)
 plt.show()
-'''
+#'''
 
-np.save('SNR_data.npy', SNR)
+#np.save('SINR_data.npy', SINR)
