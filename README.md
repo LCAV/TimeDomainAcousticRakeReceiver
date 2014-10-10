@@ -95,15 +95,20 @@ Sound Samples and Spectrograms
 While it was omitted in the paper for space reasons, we provide
 here simulation results for speech samples.
 
-* [sample1]() Simulated microphone input signal.
-* [sample2]() Output of MVDR using the direct sound only.
-* [sample3]() Output of Rake MVDR using the direct sound and 1st order echoes.
-* [sample2]() Output of Perceptual beamformer using the direct sound only.
-* [sample3]() Output of Rake Perceptual using the direct sound and 1st order echoes.
+* [sample1](https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/input.wav) 
+  Simulated microphone input signal.
+* [sample2](https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/output_DirectMVDR.wav) 
+  Output of MVDR using the direct sound only.
+* [sample3](https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/output_RakeMVDR.wav) 
+  Output of Rake MVDR using the direct sound and 1st order echoes.
+* [sample4](https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/output_DirectPerceptual.wav) 
+  Output of Perceptual beamformer using the direct sound only.
+* [sample5](https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/output_RakePerceptual.wav) 
+  Output of Rake Perceptual using the direct sound and 1st order echoes.
 
-The spectrogram of all samples as well as of the desired sound are also provided.
+The spectrogram of all samples as well as the desired sound are provided.
 
-(include spectrograms here)
+<img src="https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/figures/spectrograms.png">
 
 The samples and the spectrograms are created by the script `figure_spectrogam_and_samples.py`.
 
