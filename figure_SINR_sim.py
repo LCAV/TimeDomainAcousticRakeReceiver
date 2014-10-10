@@ -99,13 +99,4 @@ for i in np.arange(max_source):
 
     print 'Finished %d sources.' % (i)
 
-'''
-plt.figure()
-plt.plot(np.arange(max_source)+1, pra.dB(np.median(SINR, axis=-1)))
-plt.xlabel('Number of sources $K$')
-plt.ylabel('Output SINR')
-plt.legend(bf_names)
-plt.show()
-'''
-
-np.save('SINR_data.npy', SINR)
+np.save('data/SINR_data.npy', SINR)

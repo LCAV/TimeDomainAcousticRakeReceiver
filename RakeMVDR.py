@@ -80,6 +80,8 @@ room1 = pra.Room.shoeBox2D(
 room1.addSource(good_source, signal=signal1, delay=delay1)
 room1.addMicrophoneArray(mics)
 
+print 'Number of image sources:',(room1.sources[0].getImages()).shape
+
 # add interferer
 room1.addSource(normal_interferer, signal=signal2, delay=delay2)
 

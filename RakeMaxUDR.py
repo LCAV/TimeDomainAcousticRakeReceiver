@@ -7,6 +7,7 @@ from scipy.io import wavfile
 from scipy.signal import resample,fftconvolve
 
 import pyroomacoustics as pra
+import TDBeamformers as tdb
 
 # Beam pattern figure properties
 freq=[800, 1600]
@@ -18,7 +19,7 @@ ylim=[-4.9,9.4]
 Fs = 8000
 t0 = 1./(Fs*np.pi*1e-2)  # starting time function of sinc decay in RIR response
 absorption = 0.90
-max_order_sim = 1
+max_order_sim = 10
 sigma2_n = 1e-7
 
 # Room 1 : Shoe box
@@ -32,30 +33,26 @@ hard_interferer = [1.5, 3]   # interferer in direct path
 
 # microphone array design parameters
 mic1 = [2, 1.5]         # position
-M = 8                    # number of microphones
-d = 0.08                # distance between microphones
+M = 8                   # number of microphones
+d = 0.04                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
 shape = 'Linear'        # array shape
+Lg_t = 0.05             # Filter size in seconds
+Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
+delay = 0.02
 
-# define the array processing type
-N = 2048                # FFT length
-hop = 512              # hop between frames
-zp = 512               # zero padding (same front and back)
-
-# TD filter length
-Lg_t = 0.05 # Filter size in seconds
-Lg = int(np.ceil(Lg_t*Fs))
-Lgp = np.floor(0.4*Lg)
-Lgm = Lg - Lgp
-print 'Lg=',Lg
+# define the FFT length
+N = 1024
 
 # create a microphone array
 if shape is 'Circular':
-    R = circular2DArray(mic1, M, phi, d*M/(2*np.pi)) 
+    R = pra.circular2DArray(mic1, M, phi, d*M/(2*np.pi)) 
 else:
     R = pra.linear2DArray(mic1, M, phi, d) 
-mics = pra.Beamformer(R, Fs, N, Lg=Lg, hop=hop, zpf=zp, zpb=zp)
+#mics = tdb.RakeMVDR_TD(R, Fs, N, Lg=Lg)
+#mics = tdb.RakeDistortionless(R, Fs, N, Lg=Lg)
+mics = tdb.RakeMaxUDR(R, Fs, N, Lg=Lg)
 
 # The first signal (of interest) is singing
 rate1, signal1 = wavfile.read('samples/singing_'+str(Fs)+'.wav')
@@ -92,22 +89,18 @@ room1.addSource(normal_interferer, signal=signal2, delay=delay2)
 room1.compute_RIR()
 room1.simulate()
 
-# Compute the beamforming weights depending on room geometry
+# compute beamforming filters
 good_sources = room1.sources[0].getImages(max_order=max_order_design)
 bad_sources = room1.sources[1].getImages(max_order=max_order_design)
-mics.rakeMaxSINRWeights(good_sources, bad_sources, 
-                        R_n = sigma2_n*np.eye(mics.M), 
-                        rcond=0., 
-                        attn=True, ff=False)
-
-# project weights onto short filters, allocate 60% of taps for non-causal part
-mics.filtersFromWeights(non_causal=0.7)
+mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 mics.weightsFromFilters()
 
+# process the signal
+output = mics.process()
+
 # save to output file
-output = mics.process(FD=True)
-inp = pra.highpass(pra.normalize(mics.signals[mics.M/2]), Fs)
-out = pra.highpass(pra.normalize(output), Fs)
+inp = pra.normalize(pra.highpass(mics.signals[mics.M/2], Fs))
+out = pra.normalize(pra.highpass(output, Fs))
 
 wavfile.write('output_samples/input.wav', Fs, inp)
 wavfile.write('output_samples/output.wav', Fs, out)
@@ -121,14 +114,14 @@ room1.plot(img_order=np.minimum(room1.max_order, 1),
 
 # plot the beamforming weights
 plt.figure()
-mics.plot()
-
-# plot angle/frequency beampatterns
-plt.figure()
-mics.plot_beam_response()
+mics.plot(FD=True)
 
 # plot before/after processing
 plt.figure()
 pra.comparePlot(inp, out, Fs)
+
+# plot angle/frequency plot
+plt.figure()
+mics.plot_beam_response()
 
 plt.show()
