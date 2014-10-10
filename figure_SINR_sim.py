@@ -82,7 +82,7 @@ for i in np.arange(max_source):
 
         # compute noise power for 20dB SNR
         dc = np.sqrt(((source[:,np.newaxis] - center)**2).sum())
-        sigma2_n = 10.**(-SNRdB/10.)/(4.*np.pi*dc)
+        sigma2_n = 10.**(-SNRdB/10.)/(4.*np.pi*dc)**2
 
         # Select their nearest image sources (from the array center)
         good_sources = room1.sources[0].getImages(n_nearest=i+1, ref_point=center)
