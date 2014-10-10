@@ -4,12 +4,16 @@ Time Domain Acoustic Rake Receiver
 This repository contains all the code to reproduce the results of the paper
 *Raking Echoes in the Time Domain*.
 
-We created a simple framework for simulation of room acoustics in object
-oriented python and apply it to perform numerical experiments related to
-this paper. All the figures and sound samples can be recreated by calling
-simple scripts leveraging this framework. We strongly hope that this code
-will be useful beyond the scope of this paper and plan to develop it into
-a standalone python package in the future.
+Using the simple python room acoustics framework created for the 
+[Acoustic Rake Receiver](https://github.com/LCAV/AcousticRakeReceiver),
+we demonstrate two time domain beamformer designs that use echoes constructively
+to improve the signal to interference and noise ratio.
+These designs are explained in details in the paper *Raking Echoes in the Time Domain*.
+All the figures of the paper can be recreated by calling
+simple scripts leveraging this framework. In addition to the results of
+the paper, we include spectrograms and samples of speech samples.
+We strongly hope that this code will be useful beyond the scope of this paper
+and plan to develop it into a standalone python package in the future.
 
 We are available for any question or request relating to either the code
 or the theory behind it. Just ask!
@@ -85,12 +89,37 @@ The simulation data from the paper is available in `data/SINR_data_Lg30ms_d20ms_
 and can be processed with `figure_SINR_plot.py`.
 
 
-Sound Samples
--------------
+Sound Samples and Spectrograms
+------------------------------
+
+While it was omitted in the paper for space reasons, we provide
+here simulation results for speech samples.
 
 * [sample1]() Simulated microphone input signal.
-* [sample2]() Output of conventional Max-SINR beamformer.
-* [sample3]() Output of proposed  Rake-Max-SINR beamformer.
+* [sample2]() Output of MVDR using the direct sound only.
+* [sample3]() Output of Rake MVDR using the direct sound and 1st order echoes.
+* [sample2]() Output of Perceptual beamformer using the direct sound only.
+* [sample3]() Output of Rake Perceptual using the direct sound and 1st order echoes.
+
+The spectrogram of all samples as well as of the desired sound are also provided.
+
+(include spectrograms here)
+
+The samples and the spectrograms are created by the script `figure_spectrogam_and_samples.py`.
+
+
+Extra Scripts
+-------------
+
+We also include extra scripts that let us play with the different beamformers.
+The script names should be self-explanatory.
+
+    RakeLstSqFromFD.py
+    RakeMVDR.py
+    RakeMaxSINR.py
+    RakeMaxUDR.py
+    RakeOF.py
+    RakePerceptual.py
 
 
 Dependencies
