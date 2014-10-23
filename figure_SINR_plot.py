@@ -7,10 +7,10 @@ import pyroomacoustics as pra
 beamformer_names = ['Rake MaxSINR', 'Rake Perceptual', 'Rake MVDR']
 SINR = np.load('data/SINR_data.npy')
 # uncomment the following line to use the simulated data used in the paper
-#SINR = np.load('data/SINR_data_Lg30ms_d20ms_20141008.npy')
+#SINR = np.load('data/SINR_data_Lg30ms_d20ms_SNR10_N10000_20141015.npy')
 
 max_K, n_bf, n_monte_carlo = SINR.shape
-SINR_med = np.percentile(SINR, [50, 5, 95], axis=-1)
+SINR_med = np.array(np.percentile(SINR, [50, 5, 95], axis=-1))
 
 SINR_gain_5sources = pra.dB(SINR_med[0,5,:]) - pra.dB(SINR_med[0,0,:])
 print 'SNR gain of using 5 sources instead of one:'
@@ -82,6 +82,7 @@ plt.tight_layout()
 plt.legend(beamformer_names, fontsize=7, loc='upper left', frameon=False, labelspacing=0)
 
 plt.savefig('figures/SINR_vs_K.pdf')
+plt.show()
 
 plt.close()
 

@@ -36,7 +36,7 @@ M = 8                    # number of microphones
 d = 0.08                # distance between microphones
 phi = 0.                # angle from horizontal
 max_order_design = 1    # maximum image generation used in design
-shape = 'Linear'        # array shape
+shape = 'Circular'        # array shape
 
 # TD filter length
 Lg_t = 0.05 # Filter size in seconds

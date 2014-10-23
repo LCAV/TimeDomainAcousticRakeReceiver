@@ -13,7 +13,7 @@ import TDBeamformers as tdb
 bf_names = ('Rake-MaxSINR', 'Rake-Perceptual', 'Rake-MVDR')
 bf_designs = (tdb.RakeMaxSINR_TD, tdb.RakePerceptual_TD, tdb.RakeMVDR_TD)
 max_source = 10
-loops = 1000
+loops = 10000
 SINR = np.zeros((max_source, len(bf_designs), loops))
 
 # Beam pattern figure properties
@@ -28,7 +28,7 @@ t0 = 1./(Fs*np.pi*1e-2)  # starting time function of sinc decay in RIR response
 absorption = 0.90
 max_order_sim = 3
 sigma2_n = 1e-15
-SNRdB = 20.
+SNRdB = 10.
 
 # Room 1 : Shoe box
 room_dim = np.array([4, 6])
