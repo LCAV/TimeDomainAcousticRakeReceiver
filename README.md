@@ -2,7 +2,7 @@ Time Domain Acoustic Rake Receiver
 ==================================
 
 This repository contains all the code to reproduce the results of the paper
-*Raking Echoes in the Time Domain*.
+[*Raking Echoes in the Time Domain*](https://infoscience.epfl.ch/record/202223).
 
 Using the simple python room acoustics framework created for the 
 [Acoustic Rake Receiver](https://github.com/LCAV/AcousticRakeReceiver),
