@@ -97,7 +97,7 @@ RakePerceptual
 print 'Scenario2...'
 
 # Compute the beamforming weights depending on room geometry
-mics = tdb.RakeMVDR_TD(R, Fs, N, Lg=Lg)
+mics = tdb.RakePerceptual_TD(R, Fs, N, Lg=Lg)
 mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 mics.weightsFromFilters()
 
@@ -126,7 +126,7 @@ room1.addSource(hard_interferer)
 bad_sources = room1.sources[1].getImages(max_order=max_order_design)
 
 # Compute the beamforming weights depending on room geometry
-mics = tdb.RakeMVDR_TD(R, Fs, N, Lg=Lg)
+mics = tdb.RakePerceptual_TD(R, Fs, N, Lg=Lg)
 mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 mics.weightsFromFilters()
 
