@@ -12,7 +12,7 @@ SINR = np.load('data/SINR_data_Lg30ms_d20ms_SNR10_N10000_20141015.npy')
 max_K, n_bf, n_monte_carlo = SINR.shape
 SINR_med = np.array(np.percentile(SINR, [50, 25, 75], axis=-1))
 
-SINR_gain_5sources = pra.dB(SINR_med[0,5,:]) - pra.dB(SINR_med[0,0,:])
+SINR_gain_5sources = pra.dB(SINR_med[0,5,:], power=True) - pra.dB(SINR_med[0,0,:], power=True)
 print 'SNR gain of using 5 sources instead of one:'
 print 'Rake MaxSINR: %.2f dB' % SINR_gain_5sources[0]
 print 'Rake Perceptual: %.2f dB' % SINR_gain_5sources[1]
@@ -39,7 +39,7 @@ print k_axis
 
 for i in np.arange(n_bf):
     p, = plt.plot(k_axis,
-                  pra.dB(SINR_med[0,:,i]),
+                  pra.dB(SINR_med[0,:,i], power=True),
                   next(linecycler),
                   linewidth=1,
                   markersize=4,
@@ -47,7 +47,7 @@ for i in np.arange(n_bf):
                   clip_on=False)
 
 plt.fill_between(k_axis,
-                 pra.dB(SINR_med[1,:,0]), pra.dB(SINR_med[2,:,0]),
+                 pra.dB(SINR_med[1,:,0], power=True), pra.dB(SINR_med[2,:,0], power=True),
                  color='grey',
                  linewidth=0.3,
                  edgecolor='k',
