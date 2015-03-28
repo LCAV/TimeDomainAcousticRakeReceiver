@@ -1,0 +1,293 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Time-domain acoustic rake receiver by LCAV</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Time-domain acoustic rake receiver</h1>
+        <p>Software design and analysis tools for the acoustic rake receiver, a microphone beamformer that uses echoes to improve the noise and interference suppression. Python code to reproduce all the results from Raking Echoes in the Time Domain by Robin Scheibler, Ivan Dokmanic, and Martin Vetterli.</p>
+
+        <p class="view"><a href="https://github.com/LCAV/TimeDomainAcousticRakeReceiver">View the Project on GitHub <small>LCAV/TimeDomainAcousticRakeReceiver</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/LCAV/TimeDomainAcousticRakeReceiver/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/LCAV/TimeDomainAcousticRakeReceiver/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/LCAV/TimeDomainAcousticRakeReceiver">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="time-domain-acoustic-rake-receiver" class="anchor" href="#time-domain-acoustic-rake-receiver" aria-hidden="true"><span class="octicon octicon-link"></span></a>Time-Domain Acoustic Rake Receiver</h1>
+
+<p>This repository contains all the code to reproduce the results of the paper
+<a href="https://infoscience.epfl.ch/record/202223"><em>Raking Echoes in the Time Domain</em></a>.</p>
+
+<p>Using the simple python room acoustics framework created for the 
+<a href="https://github.com/LCAV/AcousticRakeReceiver">Acoustic Rake Receiver</a>,
+we demonstrate two time domain beamformer designs that use echoes constructively
+to improve the signal to interference and noise ratio.
+These designs are explained in details in the paper <em>Raking Echoes in the Time Domain</em>.
+All the figures of the paper can be recreated by calling
+simple scripts leveraging this framework. In addition to the results of
+the paper, we include spectrograms and samples of speech samples.
+We strongly hope that this code will be useful beyond the scope of this paper
+and plan to develop it into a standalone python package in the future.</p>
+
+<p>We are available for any question or request relating to either the code
+or the theory behind it. Just ask!</p>
+
+<h2>
+<a id="abstract" class="anchor" href="#abstract" aria-hidden="true"><span class="octicon octicon-link"></span></a>Abstract</h2>
+
+<p>The geometry of room acoustics is such that the reverberant signal can be seen
+as a single signal emitted from multiple locations. In analogy with the rake
+receiver from wireless communications, we propose several beamforming
+strategies that exploit, rather than suppress, this extra temporal diversity.
+Unlike earlier work in the frequency domain, time domain designs allow to
+control important timing parameters. Particularly important is the ability to
+control perceptually relevant parameters such as the amount of early echoes or
+the length of the beamformer response.  </p>
+
+<p>Relying on the knowledge of the position of sources, we derive several optimal
+beamformers. Leveraging perceptual cues, we stray from distortionless design
+and improve interference and noise reduction without degrading the perceptual
+quality. The designs are validated through simulation. Using early echoes is
+shown to strictly improve the signal to interference and noise ratio. Code and
+speech samples are available online in this repository.</p>
+
+<h2>
+<a id="authors" class="anchor" href="#authors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Authors</h2>
+
+<p>Robin Scheibler, Ivan Dokmanić, and Martin Vetterli are with 
+Laboratory for Audiovisual Communications (<a href="http://lcav.epfl.ch">LCAV</a>) at 
+<a href="http://www.epfl.ch">EPFL</a>.</p>
+
+<p><img src="http://lcav.epfl.ch/files/content/sites/lcav/files/images/Home/LCAV_anim_200.gif"></p>
+
+<h4>
+<a id="contact" class="anchor" href="#contact" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contact</h4>
+
+<p><a href="mailto:robin%5Bdot%5Dscheibler%5Bat%5Depfl%5Bdot%5Dch">Robin Scheibler</a> <br>
+EPFL-IC-LCAV <br>
+BC Building <br>
+Station 14 <br>
+1015 Lausanne</p>
+
+<h2>
+<a id="recreate-the-figures-and-sound-samples" class="anchor" href="#recreate-the-figures-and-sound-samples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recreate the figures and sound samples</h2>
+
+<p>In a UNIX terminal, run the following script.</p>
+
+<pre><code>./make_all_figures.sh
+</code></pre>
+
+<p>Alternatively, type in the following commands in an ipython shell.</p>
+
+<pre><code>run figure_beampatterns.py
+run figure_SINR_sim.py
+run figure_SINR_plot.py
+</code></pre>
+
+<p>The figures and sound samples generated are collected in <code>figures</code> and
+<code>output_samples</code>, respectively.</p>
+
+<p>The SINR simulation can be very long. For that reason, we split
+the simulation loop and the plotting routine into two files.
+We recommend to first modify the value of the <code>loops</code> variable
+in <code>figure_SINR_sim.py</code> to 10 and time the simulation to have an
+estimate of the total time required to run the simulatioin.
+The output of the simulation is saved in <code>data/SINR_data.npy</code>.
+The data can be plotted using <code>figure_SINR_plot.py</code>.</p>
+
+<h2>
+<a id="simulation-data" class="anchor" href="#simulation-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Simulation Data</h2>
+
+<p>The simulation data from the paper is available in <code>data/SINR_data_Lg30ms_d20ms_20141008.npy</code>
+and can be processed with <code>figure_SINR_plot.py</code>.</p>
+
+<h2>
+<a id="sound-samples-and-spectrograms" class="anchor" href="#sound-samples-and-spectrograms" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sound Samples and Spectrograms</h2>
+
+<p>While it was omitted in the paper for space reasons, we provide
+here simulation results for speech samples.</p>
+
+<ul>
+<li>
+<a href="https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/input.wav">sample1</a> 
+Simulated microphone input signal.</li>
+<li>
+<a href="https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/output_DirectMVDR.wav">sample2</a> 
+Output of MVDR using the direct sound only.</li>
+<li>
+<a href="https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/output_RakeMVDR.wav">sample3</a> 
+Output of Rake MVDR using the direct sound and 1st order echoes.</li>
+<li>
+<a href="https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/output_DirectPerceptual.wav">sample4</a> 
+Output of Perceptual beamformer using the direct sound only.</li>
+<li>
+<a href="https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/output_samples/output_RakePerceptual.wav">sample5</a> 
+Output of Rake Perceptual using the direct sound and 1st order echoes.</li>
+</ul>
+
+<p>The spectrogram of all samples as well as the desired sound are provided.</p>
+
+<p><img src="https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/figures/spectrograms.png"></p>
+
+<p>The samples and the spectrograms are created by the script <code>figure_spectrogam_and_samples.py</code>.</p>
+
+<h2>
+<a id="extra-scripts" class="anchor" href="#extra-scripts" aria-hidden="true"><span class="octicon octicon-link"></span></a>Extra Scripts</h2>
+
+<p>We also include extra scripts that let us play with the different beamformers.
+The script names should be self-explanatory.</p>
+
+<pre><code>RakeLstSqFromFD.py
+RakeMVDR.py
+RakeMaxSINR.py
+RakeMaxUDR.py
+RakeOF.py
+RakePerceptual.py
+</code></pre>
+
+<h2>
+<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h2>
+
+<ul>
+<li>A working distribution of <a href="https://www.python.org/downloads/">Python 2.7</a>.</li>
+<li>The code relies heavily on <a href="http://www.numpy.org/">Numpy</a>,
+<a href="http://www.scipy.org/">Scipy</a>, and <a href="http://matplotlib.org">matplotlib</a>.</li>
+<li>We use the distribution <a href="https://store.continuum.io/cshop/anaconda/">anaconda</a> to simplify the setup
+of the environment.</li>
+<li>Computations are very heavy and we use the
+<a href="https://store.continuum.io/cshop/mkl-optimizations/">MKL</a> extension of
+Anaconda to speed things up. There is a <a href="https://store.continuum.io/cshop/academicanaconda">free license</a> for academics.</li>
+</ul>
+
+<h2>
+<a id="systems-tested" class="anchor" href="#systems-tested" aria-hidden="true"><span class="octicon octicon-link"></span></a>Systems Tested</h2>
+
+<h3>
+<a id="linux" class="anchor" href="#linux" aria-hidden="true"><span class="octicon octicon-link"></span></a>Linux</h3>
+
+<table>
+<thead>
+<tr>
+<th>Machine</th>
+<th>IBM System X iDataPlex dx360 M3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>System</td>
+<td>Ubuntu 12.04.5</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>2x X5675</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>96 GB</td>
+</tr>
+</tbody>
+</table>
+
+<pre><code>System Info:
+Linux 3.11.0-26-generic #45~precise1-Ubuntu SMP Tue Jul 15 04:02:35 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+
+Python Info:
+Python 2.7.8 :: Anaconda 2.0.1 (64-bit)
+
+Python Packages Info:
+accelerate                1.7.0               np19py27_p0  
+anaconda                  2.0.1                np18py27_0  
+ipython                   2.1.0                    py27_2  
+ipython-notebook          2.1.0                    py27_0  
+ipython-qtconsole         2.1.0                    py27_0  
+matplotlib                1.3.1                np18py27_1  
+mkl                       11.1                np19py27_p3  
+mkl-rt                    11.1                         p0  
+mkl-service               1.0.0                   py27_p1  
+mklfft                    1.0                 np19py27_p0  
+numpy                     1.9.0                   py27_p0  [mkl]
+scipy                     0.14.0              np19py27_p0  [mkl]
+</code></pre>
+
+<h3>
+<a id="os-x" class="anchor" href="#os-x" aria-hidden="true"><span class="octicon octicon-link"></span></a>OS X</h3>
+
+<table>
+<thead>
+<tr>
+<th>Machine</th>
+<th>MacBook Pro Retina 15-inch, Early 2013</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>System</td>
+<td>OS X Maverick 10.9.4</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>Intel Core i7</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>16 GB</td>
+</tr>
+</tbody>
+</table>
+
+<pre><code>System Info:
+Darwin 13.3.0 Darwin Kernel Version 13.3.0: Tue Jun  3 21:27:35 PDT 2014; root:xnu-2422.110.17~1/RELEASE_X86_64 x86_64
+
+Python Info:
+Python 2.7.8 :: Anaconda 2.0.1 (x86_64)
+
+Python Packages Info:
+accelerate                1.7.0               np19py27_p0  
+anaconda                  2.0.1                np18py27_0  
+ipython                   2.1.0                    py27_2  
+ipython-notebook          2.1.0                    py27_0  
+ipython-qtconsole         2.1.0                    py27_0  
+matplotlib                1.3.1                np18py27_1  
+mkl                       11.1                np19py27_p3  
+mkl-rt                    11.1                         p0  
+mkl-service               1.0.0                   py27_p1  
+mklfft                    1.0                 np19py27_p0  
+numpy                     1.9.0                   py27_p0  [mkl]
+scipy                     0.14.0              np19py27_p0  [mkl]
+</code></pre>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Copyright (c) 2014, Robin Scheibler, Ivan Dokmanić, Martin Vetterli</p>
+
+<p>This code is free to reuse for non-commercial purpose such as academic or
+educational. For any other use, please contact the authors.</p>
+
+<p><a href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png"></a><br>Time Domain Acoustic Rake Receiver by <a href="http://lcav.epfl.ch">Robin Scheibler, Ivan Dokmanić, Martin Vetterli</a> is licensed under a <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.<br>Based on a work at <a href="https://github.com/LCAV/AcousticRakeReceiver"></a><a href="https://github.com/LCAV/AcousticRakeReceiver">https://github.com/LCAV/AcousticRakeReceiver</a>.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/LCAV">LCAV</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
