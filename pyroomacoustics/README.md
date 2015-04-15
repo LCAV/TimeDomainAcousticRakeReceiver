@@ -1,3 +1,0 @@
-
-Snapshot of pyroomacoustics repository commit d9dcd89a12e1a1f185c4fd38a0a9d6582e6beab1
-
