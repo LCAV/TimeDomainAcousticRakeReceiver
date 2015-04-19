@@ -1,6 +1,4 @@
 
-
-
 import numpy as np
 from scipy.io import wavfile
 from scipy.signal import resample, decimate
@@ -11,15 +9,21 @@ import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 
 data_folder = 'Experiment_Data/'
+#data_folder = 'Raven/'
 
-Fs = 44100.
+# this is the speed of sound
+# it is now set separately in the pyroomacoustics package.
+# We will need a way to set it package wide.
+c = 344.5
+
+Fs = 8000.
 N = 1024
-Lg = int(0.100*Fs) # 350 ms long filter
+Lg = int(0.150*Fs) # 350 ms long filter
+delay_bf = 0.04
 sigma2_n = 1e-6
-c = 345.35589778869274
 
-speech_sample1 = 'samples/fq_sample1.wav'
-speech_sample2 = 'samples/fq_sample2.wav'
+speech_sample1 = 'samples/fq_sample1_8000.wav'
+speech_sample2 = 'samples/fq_sample2_8000.wav'
 
 # read in microphones and sources locations
 f = open(data_folder + 'RIRs.positions', 'r')
@@ -31,7 +35,7 @@ n_src = len([l for l in lines if l.split(' ')[0] == 's'])
 n_mic = len([l for l in lines if l.split(' ')[0] == 'm'])
 
 # reflection coefficients from the walls (hand-waving)
-reflection = {'ground':0.7, 'south':0.7, 'west':0.7, 'north':0.7, 'east':0.7, 'ceilling':0.4}
+reflection = {'ground':0.8, 'south':0.8, 'west':0.8, 'north':0.8, 'east':0.8, 'ceilling':0.5}
 
 # read in the speakers and mics positions
 sources = np.zeros((3,n_src))
@@ -79,10 +83,15 @@ for line in lines:
 
     # read wav file
     rir_fs,rir = wavfile.read(data_folder + l[3][:-1])
+    rir = np.array(rir, dtype='float64')
 
-    # resample at new sampling rate if necessary
     if rir_fs != Fs:
-        rir = resample(rir, np.ceil(rir.shape[0]/float(rir_fs)*Fs))
+        import scikits.samplerate as sr
+        rir = sr.resample(rir, Fs/float(rir_fs), 'sinc_best')
+
+        # the factor 2 was empirically determined to be necessary to get
+        # amplitude of RIR in the correct ballpark.
+        rir *= 2.
 
     RIRs[r].insert(s, rir)
 
@@ -105,13 +114,13 @@ bad =  0
 
 # Read the two speech samples used
 rate, good_signal = wavfile.read(speech_sample1)
-good_signal = np.array(good_signal, dtype=float)
+good_signal = np.array(good_signal, dtype='float64')
 good_signal = pra.normalize(good_signal)
 good_signal = pra.highpass(good_signal, rate)
 good_len = good_signal.shape[0]/float(Fs)
 
 rate, bad_signal = wavfile.read(speech_sample2)
-bad_signal = np.array(bad_signal, dtype=float)
+bad_signal = np.array(bad_signal, dtype='float64')
 bad_signal = pra.normalize(bad_signal)
 bad_signal = pra.highpass(bad_signal, rate)
 bad_len = bad_signal.shape[0]/float(Fs)
@@ -150,7 +159,11 @@ reference = pra.highpass(ref_mic.signals[0], Fs)
 reference_n = pra.normalize(reference)
 
 # save the reference desired signal
-wavfile.write(file_ref, Fs, pra.to_16b(reference_n))
+#wavfile.write(file_ref, Fs, pra.to_16b(reference_n))
+
+new_ref = good_signal.copy()
+new_ref = pra.normalize(pra.highpass(new_ref, Fs))
+wavfile.write(file_ref, Fs, pra.to_16b(new_ref))
 
 # add the sources to the 'real' room
 room.addSource(sources[:,good], 
@@ -172,7 +185,6 @@ raw = bf.signals[ref_mic_n]
 raw_n = pra.normalize(pra.highpass(raw, Fs))
 wavfile.write(file_raw, Fs, pra.to_16b(raw_n))
 
-'''
 pesq_input = pra.pesq(file_ref, file_raw, Fs=Fs)
 print 'Input PESQ: ',pesq_input
 
@@ -184,12 +196,14 @@ for i in range(7):
     good_img = room.sources[0][:i+1]
     bad_img = room.sources[1][:i+1]
 
-    bf.rakePerceptualFilters(good_img, bad_img, sigma2_n*np.eye(n_mic*Lg))
+    bf.rakePerceptualFilters(good_img, bad_img, sigma2_n*np.eye(n_mic*Lg), delay=delay_bf)
 
     # run beamformer
     output = bf.process()
     output = pra.normalize(pra.highpass(output, Fs))
     output = pra.time_align(reference_n, output)
+
+    files_bf = 'output_samples/fq' + str(i) + file_suffix
 
     # save files for PESQ evaluation
     wavfile.write(files_bf, Fs, pra.to_16b(output))
@@ -198,7 +212,6 @@ for i in range(7):
     pesq_bf = pra.pesq(file_ref, files_bf, Fs=Fs)
 
     print str(i) + ' Image sources: ',pesq_bf
-'''
 
 
 plt.figure()
@@ -210,3 +223,72 @@ for m in range(n_mic):
     plt.plot(rir_sim)
 
 plt.show()
+'''
+
+if __name__ == '__main__':
+
+    import numpy as np
+    import sys
+    import time
+
+    if len(sys.argv) == 3 and sys.argv[1] == '-s':
+        parallel = False
+        Loops = int(sys.argv[2])
+    elif len(sys.argv) == 2:
+        parallel = True
+        Loops = int(sys.argv[1])
+    else:
+        print 'Usage: ipython figure_quality_sim.py -- [-s] <loop_number>'
+        print '       -s: Serial loop, no parallelism used.'
+        sys.exit(0)
+
+    # we restrict sources to be in a square 1m away from every wall and from the array
+    bbox_size = np.array([[2.,2.5]])
+    bbox_origin = np.array([[1.,2.5]])
+
+    # draw all target and interferer at random
+    good_source = np.random.random((Loops,2))*bbox_size + bbox_origin
+    bad_source = np.random.random((Loops,2))*bbox_size + bbox_origin
+
+    # start timing simulation
+    start = time.time()
+
+    if parallel is True:
+        # Launch many workers!
+        from IPython import parallel
+
+        # setup parallel computation env
+        c = parallel.Client()
+        print c.ids
+        c.blocks = True
+        view = c.load_balanced_view()
+
+        out = view.map_sync(perceptual_quality_evaluation, good_source, bad_source)
+
+    else:
+        # Just one boring loop...
+        out = []
+        for i in xrange(Loops):
+            out.append(perceptual_quality_evaluation(good_source[i,:], bad_source[i,:]))
+
+    # How long was this ?
+    ellapsed = time.time() - start
+
+    # how long was this ?
+    print('Time ellapsed: ' + str(ellapsed))
+
+    # recover all the data
+    pesq_input = np.array([o[0] for o in out])
+    pesq_trinicon = np.array([o[1] for o in out])
+    pesq_bf = np.array([o[2] for o in out])
+    isinr = np.array([o[3] for o in out])
+    osinr_trinicon = np.array([o[4] for o in out])
+    osinr_bf = np.array([o[5] for o in out])
+
+    # save the simulation results to file
+    filename = 'sim_data/quality_' + time.strftime('%Y%m%d-%H%M%S') + '.npz'
+    np.savez_compressed(filename, good_source=good_source, bad_source=bad_source,
+            isinr=isinr, osinr_bf=osinr_bf, osinr_trinicon=osinr_trinicon,
+            pesq_bf=pesq_bf, pesq_input=pesq_input, pesq_trinicon=pesq_trinicon)
+
+'''
