@@ -60,8 +60,7 @@ def perceptual_quality_evaluation(room_dim, mics, good_pos, good_index, bad_pos,
     ref_mic = pra.MicrophoneArray(bf.R[:,ref_mic_n,np.newaxis], Fs)
 
     # since we run multiple thread, we need to uniquely identify filenames
-    #pid = str(getpid())
-    pid = '0'
+    pid = str(getpid())
 
     file_ref  = 'output_samples/fqref' + pid + '.wav'
     file_suffix = '-' + pid + '.wav'
@@ -266,9 +265,6 @@ if __name__ == '__main__':
 
     # PREPARE PARAMETERS
     ####################
-
-    # set a maximum number of loops for testing
-    max_loops = 10
 
     if rir_type == 'measured':
 
