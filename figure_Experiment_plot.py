@@ -1,13 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import utilities as u
-import metrics as metrics
 
 import sys
 import os
 import fnmatch
 
-max_sources = 11
+max_sources = 7
 sim_data_dir = './sim_data/'
 
 beamformer_names = ['Rake Perceptual',
@@ -26,8 +24,8 @@ else:
     files = sys.argv[1:]
 
 # Empty data containers
-good_source = np.zeros((0,2))
-bad_source = np.zeros((0,2))
+good_source = np.zeros((3,0))
+bad_source = np.zeros((3,0))
 ipesq = np.zeros((0,2))
 opesq_bf = np.zeros((0,2,NBF,max_sources))
 
@@ -37,13 +35,17 @@ for fname in files:
 
     a = np.load(fname)
 
-    good_source = np.concatenate((good_source, a['good_source']), axis=0)
-    bad_source = np.concatenate((bad_source, a['bad_source']), axis=0)
+    good_source = np.concatenate((good_source, a['good_source']), axis=1)
+    bad_source = np.concatenate((bad_source, a['bad_source']), axis=1)
+    print ipesq.shape
+    print a['pesq_input'].shape
+    print opesq_bf.shape
+    print a['pesq_bf'].shape
 
-    ipesq = np.concatenate((ipesq,a['pesq_input']), axis=0)
+    ipesq = np.concatenate((ipesq,a['pesq_input'][:,:,0]), axis=0)
     opesq_bf = np.concatenate((opesq_bf,a['pesq_bf']), axis=0)
 
-loops = good_source.shape[0]
+loops = good_source.shape[1]
 
 print 'Number of loops:',loops
 print 'Median input Raw MOS',np.median(ipesq[:,0])
@@ -163,4 +165,5 @@ nice_plot(opesq_bf[:,0,:,:], 'PESQ [MOS]',
 plt.plot(np.arange(max_sources), np.median(ipesq[:,0])*np.ones(max_sources))
 plt.tight_layout()
 plt.savefig('figures/pesq_measured_rir.pdf')
+plt.show()
 
