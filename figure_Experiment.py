@@ -316,7 +316,7 @@ if __name__ == '__main__':
     # start timing simulation
     start = time.time()
 
-    if parallel is True:
+    if parallel:
         # Launch many workers!
         from IPython import parallel
 
