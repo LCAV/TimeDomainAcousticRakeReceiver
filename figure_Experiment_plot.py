@@ -5,6 +5,8 @@ import sys
 import os
 import fnmatch
 
+import pyroomacoustics as pra
+
 max_sources = 7
 sim_data_dir = './sim_data/'
 
@@ -37,10 +39,6 @@ for fname in files:
 
     good_source = np.concatenate((good_source, a['good_source']), axis=1)
     bad_source = np.concatenate((bad_source, a['bad_source']), axis=1)
-    print ipesq.shape
-    print a['pesq_input'].shape
-    print opesq_bf.shape
-    print a['pesq_bf'].shape
 
     ipesq = np.concatenate((ipesq,a['pesq_input'][:,:,0]), axis=0)
     opesq_bf = np.concatenate((opesq_bf,a['pesq_bf']), axis=0)
@@ -79,22 +77,24 @@ def nice_plot(x, ylabel, bf_order=None):
 
     for bf in bf_order:
         i = bf_dict[bf]
+        med, ci = pra.median(x, axis=0)
         p, = plt.plot(range(0, max_sources), 
-                np.median(x[:,i,:], axis=0),
+                #np.median(x[:,i,:], axis=0),
+                med[i,:],
             next(linecycler),
             linewidth=1,
             markersize=4,
             markeredgewidth=.5,
             clip_on=False)
 
-        if bf == 'Rake-MaxSINR':
-            plt.fill_between(range(0, max_sources),
-                np.percentile(x[:,i,:], 25, axis=0),
-                np.percentile(x[:,i,:], 75, axis=0),
-                color='grey',
-                linewidth=0.3,
+        # confidence interval for the median
+        plt.fill_between(range(0, max_sources),
+                med[i,:]+ci[0,i,:], med[i,:]+ci[1,i,:],
+                #color='grey',
+                color=p.get_color(),
+                linewidth=0.05,
                 edgecolor='k',
-                alpha=0.7)
+                alpha=0.3)
 
         # Hide right and top axes
         ax1.spines['top'].set_visible(False)
@@ -122,48 +122,31 @@ def nice_plot(x, ylabel, bf_order=None):
 
         plt.legend(bf_order, fontsize=7, loc='upper left', frameon=False, labelspacing=0)
 
-
-'''
-# Here is a larger figure with all performance measures.
-plt.figure(figsize=(12,6))
-
-plt.subplot(2,3,1)
-nice_plot(opesq_bf[:,0,:,:], 'PESQ [Raw MOS]')
-plt.xlabel('Number of sources')
-plt.ylabel('Raw MOS')
-
-plt.subplot(2,3,2)
-nice_plot(opesq_bf[:,1,:,:], 'PESQ [MOS LQO]')
-
-plt.subplot(2,3,3)
-nice_plot(osinr_bf, 'SINR [dB]')
-plt.xlabel('Number of sources')
-plt.ylabel('output SINR')
-
-plt.subplot(2,3,4)
-nice_plot(opesq_bf[:,0,:,:] - ipesq[:,0,np.newaxis,np.newaxis], 'Improvement PESQ [Raw MOS]')
-plt.xlabel('Number of sources')
-plt.ylabel('Improvement Raw MOS')
-
-plt.subplot(2,3,5)
-nice_plot(opesq_bf[:,1,:,:] - ipesq[:,1,np.newaxis,np.newaxis], 'Improvement PESQ [MOS LQO]')
-plt.xlabel('Number of sources')
-plt.ylabel('Improvement MOS LQO')
-
-plt.subplot(2,3,6)
-nice_plot(osinr_bf[:,:,:] - isinr[:,np.newaxis,np.newaxis], 'Improvement SINR [dB]')
-plt.xlabel('Number of sources')
-plt.ylabel('Improvement SINR')
-
-plt.tight_layout(pad=0.2)
-'''
-
 # Here we plot the figure used in the paper (Fig. 10)
 plt.figure(figsize=(4,3))
 nice_plot(opesq_bf[:,0,:,:], 'PESQ [MOS]', 
         bf_order=['Rake Perceptual','Rake MVDR'])
-plt.plot(np.arange(max_sources), np.median(ipesq[:,0])*np.ones(max_sources))
-plt.tight_layout()
+
+# plot input SNR
+med, ci = pra.median(ipesq[:,0])
+
+o = np.ones(max_sources)
+p, = plt.plot(np.arange(max_sources), np.median(ipesq[:,0])*o)
+plt.text(5.0, 1.28, 'Input PESQ', fontsize=7)
+
+'''
+# confidence interval for the median
+plt.fill_between(range(0, max_sources),
+        (med+ci[0])*o, (med+ci[1])*o,
+        #color='grey',
+        color=p.get_color(),
+        linewidth=0.05,
+        edgecolor='k',
+        alpha=0.3)
+'''
+
+
+plt.tight_layout(pad=0.2)
 plt.savefig('figures/pesq_measured_rir.pdf')
 plt.show()
 

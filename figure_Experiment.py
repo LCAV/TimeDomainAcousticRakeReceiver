@@ -23,7 +23,7 @@ def perceptual_quality_evaluation(room_dim, mics, good_pos, good_index, bad_pos,
 
     Fs = 8000.
     N = 1024
-    Lg = int(0.150*Fs) # 350 ms long filter
+    Lg = int(0.150*Fs) # 150 ms long filter
     delay_bf = 0.04
     sigma2_n = 1e-6
 

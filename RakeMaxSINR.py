@@ -7,7 +7,6 @@ from scipy.io import wavfile
 from scipy.signal import resample,fftconvolve
 
 import pyroomacoustics as pra
-import TDBeamformers as tdb
 
 # Beam pattern figure properties
 freq=[800, 1600]
@@ -51,7 +50,7 @@ elif shape is 'Poisson':
     R = pra.poisson2DArray(mic1, M, d)
 else:
     R = pra.linear2DArray(mic1, M, phi, d) 
-mics = tdb.RakeMaxSINR_TD(R, Fs, N, Lg=Lg)
+mics = pra.Beamformer(R, Fs, N=N, Lg=Lg)
 
 
 # The first signal (of interest) is singing
@@ -90,9 +89,9 @@ room1.compute_RIR()
 room1.simulate()
 
 # compute beamforming filters
-good_sources = room1.sources[0].getImages(max_order=max_order_design)
-bad_sources = room1.sources[1].getImages(max_order=max_order_design)
-mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M))
+good_sources = room1.sources[0][:max_order_design+1]
+bad_sources = room1.sources[1][:max_order_design+1]
+mics.rakeMaxSINRFilters(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M))
 mics.weightsFromFilters()
 
 # process the signal
