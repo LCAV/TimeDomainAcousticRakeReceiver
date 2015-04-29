@@ -8,7 +8,7 @@ import fnmatch
 import pyroomacoustics as pra
 
 max_sources = 7
-sim_data_dir = './sim_data/'
+sim_data_dir = './data/'
 
 beamformer_names = ['Rake Perceptual',
                     'Rake MVDR',]
@@ -18,10 +18,9 @@ NBF = len(beamformer_names)
 
 loops = 0
 
-if len(sys.argv) == 0:
-    # if no argument is specified, use all available files
-    name_pattern = './sim_data/quality_2015*.npz'
-    files = [file for file in os.listdir(sim_data_dir) if fnmatch.fnmatch(file, name_pattern)]
+if len(sys.argv) < 2:
+    # if no argument is specified, use the datafile for the data used in the paper
+    files = [sim_data_dir + 'quality_measured_rir_20150422-111704.npz']
 else:
     files = sys.argv[1:]
 

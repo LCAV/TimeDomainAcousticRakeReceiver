@@ -16,10 +16,8 @@ def perceptual_quality_evaluation(room_dim, mics, good_pos, good_index, bad_pos,
     # number of mics
     n_mic = mics.shape[1]
 
-    # this is the speed of sound
-    # it is now set separately in the pyroomacoustics package.
-    # We will need a way to set it package wide.
-    c = 344.5
+    # Set the speed of sound to match that of the measured RIR
+    pra.constants.set('c', 344.5)
 
     Fs = 8000.
     N = 1024
@@ -354,7 +352,7 @@ if __name__ == '__main__':
     pesq_bf = np.array([o[1] for o in out])
 
     # save the simulation results to file
-    filename = 'sim_data/quality_' + rir_type + '_rir_' + time.strftime('%Y%m%d-%H%M%S') + '.npz'
+    filename = 'data/quality_' + rir_type + '_rir_' + time.strftime('%Y%m%d-%H%M%S') + '.npz'
     np.savez_compressed(filename, good_source=good_source, bad_source=bad_source,
             good_src_index=good_src_index, bad_src_index=bad_src_index,
             pesq_bf=pesq_bf, pesq_input=pesq_input)
