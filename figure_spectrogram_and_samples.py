@@ -7,7 +7,6 @@ from scipy.io import wavfile
 from scipy.signal import resample,fftconvolve
 
 import pyroomacoustics as pra
-import TDBeamformers as tdb
 
 # Spectrogram figure properties
 figsize=(15, 7)        # figure size
@@ -52,6 +51,7 @@ if shape is 'Circular':
     R = pra.circular2DArray(mic1, M, phi, d*M/(2*np.pi)) 
 else:
     R = pra.linear2DArray(mic1, M, phi, d) 
+mics = pra.Beamformer(R, Fs, N=N, Lg=Lg)
 
 # The first signal (of interest) is singing
 rate1, signal1 = wavfile.read('samples/singing_'+str(Fs)+'.wav')
@@ -82,20 +82,18 @@ room1.addSource(good_source, signal=signal1, delay=delay1)
 room1.addSource(normal_interferer, signal=signal2, delay=delay2)
 
 # obtain the desired order sources
-good_sources = room1.sources[0].getImages(max_order=max_order_design)
-bad_sources = room1.sources[1].getImages(max_order=max_order_design)
+good_sources = room1.sources[0]
+bad_sources = room1.sources[1]
 
 '''
 MVDR direct path only simulation
 '''
 
 # compute beamforming filters
-mics = tdb.RakeMVDR_TD(R, Fs, N, Lg=Lg)
 room1.addMicrophoneArray(mics)
 room1.compute_RIR()
 room1.simulate()
-mics.computeWeights(good_sources[:,0,np.newaxis],
-                    bad_sources[:,0,np.newaxis],
+mics.rakeMVDRFilters(good_sources[:1], bad_sources[:1],
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
 # process the signal
@@ -114,12 +112,11 @@ Rake MVDR simulation
 '''
 
 # compute beamforming filters
-mics = tdb.RakeMVDR_TD(R, Fs, N, Lg=Lg)
 room1.addMicrophoneArray(mics)
 room1.compute_RIR()
 room1.simulate()
-mics.computeWeights(good_sources, 
-                    bad_sources, 
+mics.rakeMVDRFilters(good_sources[:max_order_design+1], 
+                    bad_sources[:max_order_design+1], 
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
 # process the signal
@@ -134,12 +131,11 @@ Perceptual direct path only simulation
 '''
 
 # compute beamforming filters
-mics = tdb.RakePerceptual_TD(R, Fs, N, Lg=Lg)
 room1.addMicrophoneArray(mics)
 room1.compute_RIR()
 room1.simulate()
-mics.computeWeights(good_sources[:,0,np.newaxis],
-                    bad_sources[:,0,np.newaxis],
+mics.rakePerceptualFilters(good_sources[:1],
+                    bad_sources[:1],
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
 # process the signal
@@ -154,12 +150,11 @@ Rake Perceptual simulation
 '''
 
 # compute beamforming filters
-mics = tdb.RakePerceptual_TD(R, Fs, N, Lg=Lg)
 room1.addMicrophoneArray(mics)
 room1.compute_RIR()
 room1.simulate()
-mics.computeWeights(good_sources, 
-                    bad_sources, 
+mics.rakePerceptualFilters(good_sources[:max_order_design+1], 
+                    bad_sources[:max_order_design+1], 
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
 # process the signal

@@ -6,7 +6,6 @@ from scipy.io import wavfile
 from scipy.signal import resample
 
 import pyroomacoustics as pra
-import TDBeamformers as tdb
 
 # Beam pattern figure properties
 freq=[800, 1600]
@@ -40,14 +39,15 @@ Lg_t = 0.050            # Filter size in seconds
 Lg = np.ceil(Lg_t*Fs)   # Filter size in samples
 delay = 0.020           # beamformer delay
 
+# define FFT length for beamformer analysis
+N = 1024
+
 # create a microphone array
 if shape is 'Circular':
     R = pra.circular2DArray(mic1, M, phi, d*M/(2*np.pi)) 
 else:
     R = pra.linear2DArray(mic1, M, phi, d) 
-
-# define FFT length for beamformer analysis
-N = 1024
+mics = pra.Beamformer(R, Fs, N=N, Lg=Lg)
 
 # create the room with sources and mics
 room1 = pra.Room.shoeBox2D(
@@ -71,10 +71,9 @@ RakeMVDR
 print 'Scenario1...'
 
 # Compute the beamforming weights depending on room geometry
-good_sources = room1.sources[0].getImages(max_order=max_order_design)
-bad_sources = room1.sources[1].getImages(max_order=max_order_design)
-mics = tdb.RakeMVDR_TD(R, Fs, N, Lg=Lg)
-mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
+good_sources = room1.sources[0][:max_order_design+1]
+bad_sources = room1.sources[1][:max_order_design+1]
+mics.rakeMVDRFilters(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 mics.weightsFromFilters()
 
 room1.addMicrophoneArray(mics)
@@ -97,8 +96,7 @@ RakePerceptual
 print 'Scenario2...'
 
 # Compute the beamforming weights depending on room geometry
-mics = tdb.RakePerceptual_TD(R, Fs, N, Lg=Lg)
-mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
+mics.rakePerceptualFilters(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 mics.weightsFromFilters()
 
 room1.addMicrophoneArray(mics)
@@ -123,11 +121,10 @@ print 'Scenario3...'
 room1.sources.pop()
 room1.addSource(hard_interferer)
 
-bad_sources = room1.sources[1].getImages(max_order=max_order_design)
+bad_sources = room1.sources[1][:max_order_design+1]
 
 # Compute the beamforming weights depending on room geometry
-mics = tdb.RakePerceptual_TD(R, Fs, N, Lg=Lg)
-mics.computeWeights(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
+mics.rakePerceptualFilters(good_sources, bad_sources, sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 mics.weightsFromFilters()
 
 room1.addMicrophoneArray(mics)
