@@ -146,6 +146,6 @@ plt.fill_between(range(0, max_sources),
 
 
 plt.tight_layout(pad=0.2)
-plt.savefig('figures/pesq_measured_rir.pdf')
+plt.savefig('figures/pesq_measured_rir.png')
 plt.show()
 

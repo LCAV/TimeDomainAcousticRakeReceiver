@@ -17,7 +17,7 @@ def perceptual_quality_evaluation(room_dim, mics, good_pos, good_index, bad_pos,
     n_mic = mics.shape[1]
 
     # Set the speed of sound to match that of the measured RIR
-    pra.constants.set('c', 344.5)
+    pra.constants.set('c', 345.5)
 
     Fs = 8000.
     N = 1024
