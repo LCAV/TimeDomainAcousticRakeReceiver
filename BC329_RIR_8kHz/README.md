@@ -5,7 +5,7 @@ Measurement of BC329
 * **Date**: 2015 April 05
 * **Location**: BC329, BC Building, EPFL, Lausanne
 
-<img src="assets/BC329_empty.jpg" width="600">
+<img src="assets/BC329_empty.jpg" width="800">
 
 
 Description
