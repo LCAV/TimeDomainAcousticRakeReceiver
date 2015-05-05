@@ -1,7 +1,7 @@
 Measurement of BC329
 ====================
 
-* **Experimenters**: Robin Scheibler, Miranda Krekovic
+* **Experimenters**: Robin Scheibler, Miranda Kreković
 * **Date**: 2015 April 05
 * **Location**: BC329, BC Building, EPFL, Lausanne
 
