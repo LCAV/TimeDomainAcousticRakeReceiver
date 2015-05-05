@@ -113,6 +113,36 @@ The spectrogram of all samples as well as the desired sound are provided.
 The samples and the spectrograms are created by the script `figure_spectrogam_and_samples.py`.
 
 
+Measured Room Impulse Responses
+-------------------------------
+
+Beyond the simulation results presented in the paper, the raking beamformers
+were validated with room impulse responses (RIR) measured in a classroom at
+EPFL. The RIR are stored as wav files in `BC329_RIR_8kHz/RIRs` and the
+methodology for the measurements is outlined in `BC329_RIR_8kHz/README.md`.
+
+The RIR were measured for a static linear array of 8 microphones spaced by 8
+cm. RIRs were measured for 12 different source positions. In the validation all
+132 combinations of desired/interfering sources are tested. Sound propagation
+is simulated by convolving speech samples with the RIR. 
+
+Using the measured room dimension and locations of sources, as well as
+approximate reflection coefficients for the walls, both Rake MVDR and Rake
+Perceptual beamformers are computed. The output of the beamformers is evaluated
+with respect to the clean desired speech signal using the perceptual evaluation
+of speech quality (PESQ) metric.
+
+Even though the calibration of room characteristics, microphones, and speakers locations
+was only approximate, we observe the same kind of thread than in the pure SINR simulation.
+That is speech quality is improved by using extra reflections in the room.
+
+<img src="https://raw.githubusercontent.com/LCAV/TimeDomainAcousticRakeReceiver/master/figures/pesq_measured_rir.png">
+
+The simulation can be run as `ipython figure_Experiment.py 132` and the output of the
+simulation can be plotted using `ipython figure_Experiment_plot.py` (with optional
+simulation output filename argument).
+
+
 Extra Scripts
 -------------
 
@@ -138,6 +168,84 @@ Dependencies
 * Computations are very heavy and we use the
   [MKL](https://store.continuum.io/cshop/mkl-optimizations/) extension of
   Anaconda to speed things up. There is a [free license](https://store.continuum.io/cshop/academicanaconda) for academics.
+* An implementation of PESQ is needed to run `figure_Experiment.py`. In a pinch, the reference
+  implementation of the ITU can be used. To compile it follow the instructions.
+
+### PESQ Tool
+
+Download the [source files](http://www.itu.int/rec/T-REC-P.862-200511-I!Amd2/en) 
+of the ITU P.862 compliance tool from the ITU website.  Follow the instructions
+to compile the tool and copy the executable produced in the `bin` directory.
+
+#### Unix compilation (Linux/Mac OS X)
+
+Execute the following sequence of commands to get to the source code.
+
+    mkdir PESQ
+    cd PESQ
+    wget 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-P.862-200511-I!Amd2!SOFT-ZST-E&type=items'
+    unzip dologin_pub.asp\?lang\=e\&id\=T-REC-P.862-200511-I\!Amd2\!SOFT-ZST-E\&type\=items
+    cd Software
+    unzip 'P862_annex_A_2005_CD  wav final.zip'
+    cd P862_annex_A_2005_CD/source/
+
+In the `Software/P862_annex_A_2005_CD/source/` directory, create a file called `Makefile` and copy
+the following into it.
+
+    CC=gcc
+    CFLAGS=-O2
+
+    OBJS=dsp.o pesqdsp.o pesqio.o pesqmod.o pesqmain.o
+    DEPS=dsp.h pesq.h pesqpar.h
+
+    %.o: %.c $(DEPS)
+      $(CC) -c -o $@ $< $(CFLAGS)
+
+    pesq: $(OBJS)
+      $(CC) -o $@ $^ $(CFLAGS)
+
+    .PHONY : clean
+    clean :
+      -rm pesq $(OBJS)
+
+Execute compilation by typing this.
+
+    make pesq
+
+Finally move the `pesq` binary to `<repo_root>/bin/`.
+
+Notes:
+* The files input to the pesq utility must be 16 bit PCM wav files.
+* File names longer than 14 characters (suffix included) cause the utility to
+  crash with the message `Abort trap(6)` or similar.
+
+#### Windows compilation
+
+1. Open visual studio, create a new project from existing files and select the directory
+  containing the source code of PESQ (`Software\P862_annex_A_2005_CD\source\`).
+
+          FILE -> New -> Project From Existing Code...
+
+2. Select `Visual C++` from the dropdown menu, then next.
+    * *Project file location* : directory containing source code of pesq (`Software\P862_annex_A_2005_CD\source\`).
+    * *Project Name* : pesq
+    * Then next.
+    * As *project type*, select `Console application` project.
+    * Then finish.
+
+3. Go to
+
+          BUILD -> Configuration Manager...
+
+    and change active solution configuration from `Debug` to `Release`. Then Close.
+
+4. Then 
+
+          BUILD -> Build Solution
+
+5. Copy the executable `Release\pesq.exe` to the bin folder.
+
+*(tested with Microsoft Windows Server 2012)*
 
 
 Systems Tested

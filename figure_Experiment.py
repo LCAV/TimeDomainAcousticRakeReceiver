@@ -222,16 +222,7 @@ if __name__ == '__main__':
     # This is the location of simulated/measured RIRs
     #################################################
 
-    rir_type = 'measured'
-    #rir_type = 'simulated'
-
-    if rir_type == 'measured':
-        data_folder = 'Experiment_Data/'
-    elif rir_type == 'simulated':
-        data_folder = 'Raven/'
-    else:
-        raise NameError('RIR type needs to be ''measured'' or ''simulated''.')
-
+    data_folder = 'BC329_RIR_8kHz/'
 
     # read in room size, microphones and sources locations
     ######################################################
@@ -264,39 +255,28 @@ if __name__ == '__main__':
     # PREPARE PARAMETERS
     ####################
 
-    if rir_type == 'measured':
+    Loops = np.minimum(n_src*(n_src-1), Loops)
+    
+    good_src_index = np.zeros(Loops)
+    bad_src_index = np.zeros(Loops)
+    good_source = np.zeros((sources.shape[0], Loops))
+    bad_source = np.zeros((sources.shape[0], Loops))
+    from itertools import product
+    i = 0
+    for s1,s2 in product(np.arange(n_src),np.arange(n_src)):
 
-        Loops = np.minimum(n_src*(n_src-1), Loops)
-        
-        good_src_index = np.zeros(Loops)
-        bad_src_index = np.zeros(Loops)
-        good_source = np.zeros((sources.shape[0], Loops))
-        bad_source = np.zeros((sources.shape[0], Loops))
-        from itertools import product
-        i = 0
-        for s1,s2 in product(np.arange(n_src),np.arange(n_src)):
+        if i == Loops:
+            break
 
-            if i == Loops:
-                break
+        if s1 == s2:
+            continue
+        else:
+            good_src_index[i] = s1
+            good_source[:,i] = sources[:,s1]
+            bad_src_index[i] = s2
+            bad_source[:,i] = sources[:,s2]
+            i += 1
 
-            if s1 == s2:
-                continue
-            else:
-                good_src_index[i] = s1
-                good_source[:,i] = sources[:,s1]
-                bad_src_index[i] = s2
-                bad_source[:,i] = sources[:,s2]
-                i += 1
-
-
-    elif rir_type == 'simulated':
-
-        Loops = np.minimum(n_src/2, Loops)
-
-        good_src_index = np.arange(n_src/2)
-        bad_src_index = np.arange(n_src/2,n_src)
-        good_source = sources[:,:n_src/2]
-        bad_source = sources[:,n_src/2:]
 
     # room dimension and location RIR files really just need to
     # to be repeated in an array
@@ -352,7 +332,7 @@ if __name__ == '__main__':
     pesq_bf = np.array([o[1] for o in out])
 
     # save the simulation results to file
-    filename = 'data/quality_' + rir_type + '_rir_' + time.strftime('%Y%m%d-%H%M%S') + '.npz'
+    filename = 'data/quality_measured_rir_' + time.strftime('%Y%m%d-%H%M%S') + '.npz'
     np.savez_compressed(filename, good_source=good_source, bad_source=bad_source,
             good_src_index=good_src_index, bad_src_index=bad_src_index,
             pesq_bf=pesq_bf, pesq_input=pesq_input)
