@@ -20,7 +20,7 @@ loops = 0
 
 if len(sys.argv) < 2:
     # if no argument is specified, use the datafile for the data used in the paper
-    files = [sim_data_dir + 'quality_measured_rir_20150422-111704.npz']
+    files = [sim_data_dir + 'quality_measured_rir_20150429-184503.npz']
 else:
     files = sys.argv[1:]
 
